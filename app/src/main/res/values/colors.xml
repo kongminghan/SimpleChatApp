@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="colorPrimary">#6051EC</color>
+    <color name="colorPrimaryDark">#4C40BC</color>
+    <color name="colorAccent">#FF4081</color>
+
+    <color name="colorLoginPrimary">#4A466A</color>
+    <color name="colorLoginPrimaryDark">#3B3854</color>
+    <color name="colorLoginAccent">#FF4081</color>
+    <color name="colorBackground">#4A466A</color>
+
+    <color name="white">#ffffff</color>
+    <color name="facebook">#4868AD</color>
+    <color name="chatbox">#E4E4E4</color>
+    <color name="btnText">#C0C0C0</color>
+    <color name="msg_sent">#6051EC</color>
+</resources>

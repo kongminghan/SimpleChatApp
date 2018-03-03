@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        >
+        <shape android:shape="rectangle">
+            <corners
+                android:radius="3dp"
+                android:topRightRadius="0dp"/>
+
+            <solid
+                android:color="@color/msg_sent"/>
+
+            <size
+                android:width="120dp"
+                android:height="40dp"/>
+
+        </shape>
+    </item>
+
+    <!--right triangle-->
+    <item
+        android:right="00dp">
+        <rotate
+            android:fromDegrees="135">
+            <shape android:shape="rectangle">
+                <solid android:color="@color/colorBackground" />
+            </shape>
+        </rotate>
+    </item>
+</layer-list>
