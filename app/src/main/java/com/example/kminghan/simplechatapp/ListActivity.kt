@@ -18,24 +18,20 @@ import android.widget.LinearLayout
 import android.widget.Toast
 import com.facebook.login.LoginManager
 
-import com.sendbird.android.OpenChannel
-import com.sendbird.android.SendBird
-import com.sendbird.android.SendBirdException
-import com.sendbird.android.OpenChannelListQuery
-import com.sendbird.android.GroupChannel
-import com.sendbird.android.User
 import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.ValueEventListener
+import com.sendbird.android.*
 
 class ListActivity : AppCompatActivity() {
     private lateinit var linearLayoutManager: LinearLayoutManager
     private lateinit var adapter: RecyclerAdapter
-    private lateinit var myRef: DatabaseReference
     private lateinit var userId: String
     private var chatList: ArrayList<Channel> = ArrayList()
+    private val TYPE_PRIVATE: Int = 1;
+    private val TYPE_GROUP: Int = 2;
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -50,7 +46,8 @@ class ListActivity : AppCompatActivity() {
         rv.adapter = adapter
 
         userId = intent.getStringExtra("id");
-        //val name = intent.getStringExtra("name")
+        val name = intent.getStringExtra("name")
+        val profile_pic = intent.getStringExtra("profile_pic")
 
         SendBird.init(getString(R.string.app_id), applicationContext)
         SendBird.connect(userId, SendBird.ConnectHandler { user, e ->
@@ -59,49 +56,49 @@ class ListActivity : AppCompatActivity() {
                 return@ConnectHandler
             }
 
-            //            SendBird.updateCurrentUserInfo(name, facebookData["profile_pic"].toString(), SendBird.UserInfoUpdateHandler { e ->
-            //                if (e != null) {
-            //                    // Error!
-            //                    Toast.makeText(applicationContext, "" + e.code + ":" + e.message, Toast.LENGTH_SHORT).show()
-            //                    return@UserInfoUpdateHandler
-            //                }
-            //            })
-        })
+            val channelList = GroupChannel.createMyGroupChannelListQuery()
+            channelList.setLimit(50)
+            channelList.setIncludeEmpty(true);
+            channelList.next { groupChannelList: List<GroupChannel>, sendBirdException ->
+                if(sendBirdException!=null){
+                    Toast.makeText(applicationContext, sendBirdException.toString(), Toast.LENGTH_LONG).show()
+                    return@next;
+                }
 
-        val database = FirebaseDatabase.getInstance()
-        myRef = database.getReference(userId)
+                for(myChannel in groupChannelList)
+                {
+                    if(myChannel.memberCount == 2){
+                        myChannel.members
+                                .filterNot { it.userId == userId }
+                                .forEach {
+                                    val lastMsg: String = if(myChannel.lastMessage != null)
+                                        (myChannel.lastMessage as UserMessage).message else ""
 
-        myRef.child("channel").addValueEventListener(object: ValueEventListener {
-            override fun onDataChange(dataSnapshot: DataSnapshot) {
-                chatList.clear()
-                dataSnapshot.children.mapNotNullTo(chatList){
-                    it.getValue<Channel>(Channel::class.java)
+                                    val lastSeenAt: String = if(it.lastSeenAt != null)
+                                        it.lastSeenAt.toString() else ""
+                                    chatList.add(Channel(it.nickname, lastMsg, it.profileUrl, myChannel.url, lastSeenAt, TYPE_PRIVATE)) }
+                    }
+                    else if (myChannel.memberCount > 2){
+                        val lastMsg: String = if(myChannel.lastMessage != null)
+                            myChannel.lastMessage.toString() else ""
+
+                        chatList.add(Channel(myChannel.name, lastMsg, myChannel.coverUrl, myChannel.url, myChannel.lastMessage.updatedAt.toString(), TYPE_GROUP))
+                    }
                 }
                 adapter.notifyDataSetChanged()
             }
-
-            override fun onCancelled(error: DatabaseError) {}
         })
 
-//        myRef.addValueEventListener(object : ValueEventListener {
+//        val database = FirebaseDatabase.getInstance()
+//        myRef = database.getReference(userId)
+//
+//        myRef.child("channel").addValueEventListener(object: ValueEventListener {
 //            override fun onDataChange(dataSnapshot: DataSnapshot) {
-//                for (postSnapshot in dataSnapshot.children) {
-//                    val channel = dataSnapshot.getValue(String::class.java)
-//
-//                    val iDs: MutableList<String> = mutableListOf(userId, "123")
-//
-//                    GroupChannel.createChannelWithUserIds(iDs, true, GroupChannel.GroupChannelCreateHandler { groupChannel, e ->
-//                        if (e != null) {
-//                            Toast.makeText(applicationContext, e.toString(), Toast.LENGTH_LONG).show()
-//                            return@GroupChannelCreateHandler
-//                        }
-//                        val members = groupChannel.getMembers()
-//                        for(member in members){
-//                            chatList.add(Channel(member.nickname, "last msg", member.profileUrl))
-//                        }
-//                        adapter.notifyDataSetChanged()
-//                    })
+//                chatList.clear()
+//                dataSnapshot.children.mapNotNullTo(chatList){
+//                    it.getValue<Channel>(Channel::class.java)
 //                }
+//                adapter.notifyDataSetChanged()
 //            }
 //
 //            override fun onCancelled(error: DatabaseError) {}
@@ -121,6 +118,7 @@ class ListActivity : AppCompatActivity() {
         val id = item!!.itemId
         if(id == R.id.miSignOut) {
             LoginManager.getInstance().logOut()
+            SendBird.disconnect {  }
             Thread(Runnable {
                 startActivity(Intent(applicationContext, LoginActivity::class.java))
             }).start()
@@ -133,7 +131,7 @@ class ListActivity : AppCompatActivity() {
         val mView = layoutInflaterAndroid.inflate(R.layout.dialog_create_channel, null)
         val input = mView.findViewById<EditText>(R.id.userInputDialog)
         val alertDialogBuilderUserInput = AlertDialog.Builder(this@ListActivity)
-        alertDialogBuilderUserInput.setView(mView);
+        alertDialogBuilderUserInput.setView(mView)
 
         alertDialogBuilderUserInput
                 .setCancelable(false)
@@ -147,12 +145,11 @@ class ListActivity : AppCompatActivity() {
                             return@GroupChannelCreateHandler
                         }
 
-                        val members = groupChannel.getMembers()
+                        val members = groupChannel.members
                         for(member in members){
                             if(!member.userId.equals(userId)) {
-                                val chn = Channel(member.nickname, "last msg", member.profileUrl, groupChannel.url)
+                                val chn = Channel(member.nickname, "", member.profileUrl, groupChannel.url, "", TYPE_PRIVATE)
                                 chatList.add(chn)
-                                myRef.child("channel").push().setValue(chn)
                             }
                         }
                         adapter.notifyDataSetChanged()
@@ -161,10 +158,10 @@ class ListActivity : AppCompatActivity() {
 
                 .setNegativeButton("Cancel", {
                     dialogBox, id ->
-                    dialogBox.cancel();
+                    dialogBox.cancel()
                 })
 
-        val alertDialogAndroid = alertDialogBuilderUserInput.create();
-        alertDialogAndroid.show();
+        val alertDialogAndroid = alertDialogBuilderUserInput.create()
+        alertDialogAndroid.show()
     }
 }

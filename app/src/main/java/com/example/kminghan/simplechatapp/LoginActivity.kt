@@ -31,7 +31,6 @@ import java.security.NoSuchAlgorithmException
 class LoginActivity : AppCompatActivity() {
 
     private var callbackManager: CallbackManager? = null
-    private var dialog: ProgressDialog? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -64,8 +63,23 @@ class LoginActivity : AppCompatActivity() {
                         jsonObject, response ->
                         // Getting FB User Data
                         val facebookData = getFacebookData(jsonObject)
-                        goToNextActivity(facebookData!!);
-                        finish()
+
+                        SendBird.init(getString(R.string.app_id), applicationContext)
+                        SendBird.connect(loginResult.accessToken.userId, SendBird.ConnectHandler { user, e ->
+                            if (e != null) {
+                                Toast.makeText(applicationContext, "Failed to connect to SendBird", Toast.LENGTH_SHORT).show()
+                                return@ConnectHandler
+                            }
+
+                            SendBird.updateCurrentUserInfo(facebookData!!["name"].toString(), facebookData["profile_pic"].toString(), SendBird.UserInfoUpdateHandler { e ->
+                                if (e != null) {
+                                    Toast.makeText(applicationContext, "" + e.code + ":" + e.message, Toast.LENGTH_SHORT).show()
+                                    return@UserInfoUpdateHandler
+                                }
+                                goToNextActivity(facebookData!!);
+                                finish()
+                            })
+                        })
                     }
                     request.executeAsync()
                 }

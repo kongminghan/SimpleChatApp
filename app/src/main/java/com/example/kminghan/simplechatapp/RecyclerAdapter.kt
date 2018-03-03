@@ -28,11 +28,14 @@ class RecyclerAdapter (val chats: ArrayList<Channel>): RecyclerView.Adapter<Recy
     }
 
     class ChannelHolder(v: View) : RecyclerView.ViewHolder(v) {
-//class ChannelHolder(v: View) : RecyclerView.ViewHolder(v){
         private var view: View = v
 
         fun bindChannel(chat: Channel) {
-            Glide.with(view.context).load(chat.img_url).apply(RequestOptions().circleCrop()).into(view.img)
+            if(chat.img_url != "")
+                Glide.with(view.context).load(chat.img_url).apply(RequestOptions().circleCrop()).into(view.img)
+            else
+                Glide.with(view.context).load(R.drawable.ic_person).apply(RequestOptions().circleCrop()).into(view.img)
+
             view.name.text = chat.name
             view.last_msg.text = chat.lastMsg
 
@@ -41,6 +44,7 @@ class RecyclerAdapter (val chats: ArrayList<Channel>): RecyclerView.Adapter<Recy
                 intent.putExtra("channelUrl", chat.channelUrl)
                 intent.putExtra("profileUrl", chat.img_url)
                 intent.putExtra("name", chat.name)
+                intent.putExtra("lastSeen", chat.lastSeenAt)
                 view.context.startActivity(intent)
             }
         }

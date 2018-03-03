@@ -13,5 +13,7 @@
     <color name="facebook">#4868AD</color>
     <color name="chatbox">#E4E4E4</color>
     <color name="btnText">#C0C0C0</color>
-    <color name="msg_sent">#6051EC</color>
+    <color name="black">#000000</color>
+    <color name="chatDay">#D4EAF4</color>
+    <color name="chatBackground">#F0F0F0</color>
 </resources>

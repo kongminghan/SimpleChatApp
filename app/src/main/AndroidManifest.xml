@@ -50,7 +50,7 @@
             android:name=".ListActivity"
             android:label="Chat" />
         <activity android:name=".ChatActivity"
-            android:parentActivityName=".ListActivity"></activity>
+            android:parentActivityName=".ListActivity"/>
     </application>
 
 </manifest>

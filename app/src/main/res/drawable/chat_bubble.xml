@@ -8,7 +8,7 @@
                 android:topRightRadius="0dp"/>
 
             <solid
-                android:color="@color/msg_sent"/>
+                android:color="@color/colorPrimary"/>
 
             <size
                 android:width="120dp"
