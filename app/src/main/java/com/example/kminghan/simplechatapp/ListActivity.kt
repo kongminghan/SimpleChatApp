@@ -5,14 +5,17 @@ import kotlinx.android.synthetic.main.activity_list.*
 import android.os.Bundle
 import android.app.AlertDialog
 import android.content.Intent
+import android.opengl.Visibility
 import android.support.v7.widget.LinearLayoutManager
 import android.support.v7.widget.RecyclerView
 import android.view.LayoutInflater
 import android.view.Menu
 import android.view.MenuItem
+import android.view.View
 import android.widget.LinearLayout
 import android.widget.Toast
 import com.facebook.login.LoginManager
+import com.google.firebase.iid.FirebaseInstanceId
 import com.sendbird.android.*
 import com.sendbird.android.User
 import com.sendbird.android.UserListQuery
@@ -29,6 +32,7 @@ class ListActivity : AppCompatActivity() {
 
     private val TYPE_PRIVATE: Int = 1;
     private val TYPE_GROUP: Int = 2;
+    private val CHANNEL_HANDLER_ID = "CHAT_CHANNEL"
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -49,9 +53,18 @@ class ListActivity : AppCompatActivity() {
                 return@ConnectHandler
             }
 
+            SendBird.registerPushTokenForCurrentUser(FirebaseInstanceId.getInstance().getToken(),
+                    SendBird.RegisterPushTokenWithStatusHandler {
+                        _, e ->
+                        if (e != null) {
+                            e.printStackTrace()
+                            return@RegisterPushTokenWithStatusHandler
+                        }
+                    })
+
             swipeContainer.isRefreshing = true
-            refresh()
-            initUsers()
+            rv.visibility = View.GONE
+            //refresh()
         })
 
         fab.setOnClickListener {
@@ -97,35 +110,49 @@ class ListActivity : AppCompatActivity() {
 
         alertDialogBuilderUserInput
                 .setCancelable(false)
-                .setPositiveButton("Send", {
+                .setPositiveButton("Create", {
                     _, _ ->
                     if(userAdapter!!.getSelectedIdCount() > 0) {
-                        GroupChannel.createChannelWithUserIds(userAdapter!!.getSelectedIds(), true, GroupChannel.GroupChannelCreateHandler { groupChannel, e ->
+                        val channelType = if(userAdapter!!.getSelectedIdCount() == 2)
+                            "private"
+                        else
+                            "Group Channel"
+
+                        GroupChannel.createChannelWithUserIds(userAdapter!!.getSelectedIds(), true, channelType, null, null, GroupChannel.GroupChannelCreateHandler { groupChannel, e ->
                             if (e != null) {
                                 e.printStackTrace()
                                 return@GroupChannelCreateHandler
                             }
 
-                            for(c in chatList){
-                                if(c.channelUrl != groupChannel.url){
-                                    val members = groupChannel.members
+                            var isAdded: Boolean = false
+                            var chn: Channel? = null
 
-                                    for(member in members){
-                                        if(member.userId != userId) {
+                            val filteredList: Channel? = chatList.find { it.channelUrl == groupChannel.url }
 
-                                            val chn: Channel = if(groupChannel.memberCount > 2) {
-                                                Channel(member.nickname, "", groupChannel.coverUrl, groupChannel.url,"", TYPE_GROUP)
-                                            } else {
-                                                Channel(member.nickname, "", member.profileUrl, groupChannel.url,"", TYPE_PRIVATE)
+                            if(filteredList == null) {
+                                for(c in chatList){
+                                    if(c.channelUrl != groupChannel.url){
+                                        val members = groupChannel.members
+
+                                        if(groupChannel.memberCount > 2) {
+                                            chn = Channel(groupChannel.name, "", groupChannel.coverUrl, groupChannel.url,"", TYPE_GROUP)
+                                            isAdded = true
+                                        }else {
+                                            for(member in members){
+                                                if(member.userId != userId)
+                                                    chn = Channel(member.nickname, "", member.profileUrl, groupChannel.url,"", TYPE_PRIVATE)
+                                                isAdded = true
                                             }
-                                            chatList.add(chn)
                                         }
+                                        break
                                     }
-                                    adapter!!.notifyDataSetChanged()
-                                }else{
-                                    Toast.makeText(this@ListActivity, "Duplicate channel is found!", Toast.LENGTH_SHORT).show()
                                 }
+                                chatList.add(chn!!)
+                                checkEmptyState()
+                                adapter!!.notifyDataSetChanged()
                             }
+                            else
+                                Toast.makeText(this@ListActivity, "Duplicate channel is found!", Toast.LENGTH_SHORT).show()
                         })
                     }
                 })
@@ -148,9 +175,30 @@ class ListActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
+
+        SendBird.connect(userId, SendBird.ConnectHandler { _, e ->
+            if (e != null) {
+                Toast.makeText(applicationContext, "Failed to connect to SendBird", Toast.LENGTH_SHORT).show()
+                return@ConnectHandler
+            }
+            refresh()
+            initUsers()
+        })
+    }
+
+    private fun checkEmptyState() {
+        if(chatList.size > 0){
+            emptyLayout.visibility = View.GONE
+            rv.visibility = View.VISIBLE
+        }
+        else {
+            emptyLayout.visibility = View.VISIBLE
+            rv.visibility = View.GONE
+        }
     }
 
     private fun refresh(){
+        swipeContainer.isRefreshing = true
         chatList.clear()
         val channelList = GroupChannel.createMyGroupChannelListQuery()
         channelList.setLimit(50)
@@ -182,12 +230,13 @@ class ListActivity : AppCompatActivity() {
                 }
                 else if (myChannel.memberCount > 2){
                     val lastMsg: String = if(myChannel.lastMessage != null)
-                        myChannel.lastMessage.toString() else ""
+                        (myChannel.lastMessage as UserMessage).message else ""
 
                     chatList.add(Channel(myChannel.name, lastMsg, myChannel.coverUrl, myChannel.url,
                             "", TYPE_GROUP))
                 }
             }
+            checkEmptyState()
             adapter!!.notifyDataSetChanged()
             swipeContainer.isRefreshing = false
         }

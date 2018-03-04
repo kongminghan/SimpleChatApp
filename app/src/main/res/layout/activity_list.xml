@@ -35,18 +35,48 @@
             app:layout_constraintTop_toTopOf="parent" />
 
         <android.support.v4.widget.SwipeRefreshLayout
+            android:id="@+id/swipeContainer"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:id="@+id/swipeContainer">
+            android:layout_height="match_parent">
 
-            <android.support.v7.widget.RecyclerView
-                android:id="@+id/rv"
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:paddingBottom="4dp"
-                android:clipToPadding="false"
-                android:scrollbars="vertical">
-            </android.support.v7.widget.RecyclerView>
+                android:gravity="center"
+                android:orientation="vertical">
+
+                <android.support.v7.widget.RecyclerView
+                    android:id="@+id/rv"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:paddingBottom="4dp"
+                    android:clipToPadding="false"
+                    android:scrollbars="vertical"
+                    android:visibility="gone"/>
+
+                <LinearLayout
+                    android:id="@+id/emptyLayout"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:gravity="center"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="No channels"
+                        android:textSize="18sp"
+                        android:textStyle="bold"
+                        android:layout_margin="6dp"/>
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="No conversations with Simple Chat App yet"/>
+
+                </LinearLayout>
+
+            </LinearLayout>
 
         </android.support.v4.widget.SwipeRefreshLayout>
 

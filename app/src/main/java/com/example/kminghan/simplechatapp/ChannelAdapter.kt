@@ -54,6 +54,7 @@ class ChannelAdapter(val chats: ArrayList<Channel>): RecyclerView.Adapter<Channe
                     intent.putExtra("profileUrl", chat.img_url)
                     intent.putExtra("name", chat.name)
                     intent.putExtra("lastSeen", chat.lastSeenAt)
+                    intent.putExtra("type", chat.type)
                     view.context.startActivity(intent)
                 }
                 else if(chat.type == TYPE_GROUP){

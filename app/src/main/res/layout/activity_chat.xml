@@ -37,8 +37,8 @@
         android:layout_height="0dp"
         android:paddingTop="8dp"
         android:paddingBottom="8dp"
-        android:paddingLeft="12dp"
-        android:paddingRight="12dp"
+        android:paddingLeft="8dp"
+        android:paddingRight="8dp"
         android:clipToPadding="false"
         android:scrollbars="vertical"
         app:layout_constraintBottom_toTopOf="@+id/divider"
@@ -95,8 +95,8 @@
             android:gravity="center"
             android:text="SEND"
             android:textSize="14dp"
-            android:textColor="@color/btnText"
-            android:textStyle="bold" />
+            android:textStyle="bold"
+            android:enabled="false"/>
     </LinearLayout>
 
 </android.support.constraint.ConstraintLayout>

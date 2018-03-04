@@ -9,12 +9,13 @@ import android.content.Context
 import android.content.Intent
 import android.support.v4.app.NotificationCompat
 import android.util.Log
+import android.widget.Toast
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 import com.sendbird.android.BaseChannel
 import org.json.JSONException
 import org.json.JSONObject
-
+import java.util.*
 
 
 /**
@@ -31,35 +32,42 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
         var channelName: String? = null
         var channelType: Int? = null
         var profileUrl: String? = null
+        var lastSeen: String? = null
 
         try {
             val sendBird = JSONObject(remoteMessage.getData().get("sendbird"))
             val channel = sendBird.get("channel") as JSONObject
-            val sender = sendBird.get("recipient") as JSONObject
-            val type = sendBird.get("channel_type") as String
+            val sender = sendBird.get("sender") as JSONObject
+            val type = channel.get("name") as String
 
-            if(type == "group_messaging"){
+            if(type == "private"){
                 channelType = TYPE_PRIVATE
-                profileUrl = ""
+                profileUrl = sender.get("profile_url") as String
+                lastSeen = Date().time.toString()
+                channelName = sender.get("name") as String
             }else {
                 channelType = TYPE_GROUP
-                profileUrl = sender.get("profile_url") as String
+                profileUrl = ""
+                lastSeen = ""
+                channelName = channel.get("name") as String
             }
             channelUrl = channel.get("channel_url") as String
-            channelName = channel.get("name") as String
         } catch (e: JSONException) {
             e.printStackTrace()
         }
 
-        sendNotification(this, remoteMessage.data["message"]!!, channelUrl, channelType!!, channelName!!, profileUrl!!)
+        sendNotification(this, remoteMessage.data["message"]!!, channelUrl, channelType!!, channelName!!, profileUrl!!, lastSeen!!)
     }
 
-    private fun sendNotification(context: Context, messageBody: String, channelUrl: String?, channelType: Int, channelName: String, profileUrl: String) {
+    private fun sendNotification(context: Context, messageBody: String, channelUrl: String?,
+                                 channelType: Int, channelName: String, profileUrl: String, lastSeen: String) {
         val intent = Intent(context, ChatActivity::class.java)
         intent.putExtra("channelUrl", channelUrl)
         intent.putExtra("name", channelName)
         intent.putExtra("profileUrl", profileUrl)
         intent.putExtra("type", channelType)
+        intent.putExtra("lastSeen", lastSeen)
+
         intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
 
         val pendingIntent = PendingIntent.getActivity(context, 0, intent,
