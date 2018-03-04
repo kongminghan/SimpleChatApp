@@ -15,11 +15,11 @@
     </style>
 
     <!--<style name="AppTheme.ActionBar" parent="Theme.AppCompat.Light.DarkActionBar">-->
-        <!--<item name="colorPrimary">@color/colorPrimary</item>-->
-        <!--<item name="colorPrimaryDark">@color/colorPrimaryDark</item>-->
-        <!--<item name="colorAccent">@color/colorAccent</item>-->
-        <!--<item name="android:textColor">@color/white</item>-->
-        <!--<item name="actionMenuTextColor">@color/white</item>-->
+    <!--<item name="colorPrimary">@color/colorPrimary</item>-->
+    <!--<item name="colorPrimaryDark">@color/colorPrimaryDark</item>-->
+    <!--<item name="colorAccent">@color/colorAccent</item>-->
+    <!--<item name="android:textColor">@color/white</item>-->
+    <!--<item name="actionMenuTextColor">@color/white</item>-->
     <!--</style>-->
 
     <style name="LoginTheme" parent="Theme.AppCompat.Light.NoActionBar">
@@ -28,5 +28,9 @@
         <item name="colorAccent">@color/colorAccent</item>
         <item name="android:windowNoTitle">true</item>
     </style>
+
+    <style name="AppTheme.AppBarOverlay" parent="ThemeOverlay.AppCompat.Dark.ActionBar" />
+
+    <style name="AppTheme.PopupOverlay" parent="ThemeOverlay.AppCompat.Light" />
 
 </resources>

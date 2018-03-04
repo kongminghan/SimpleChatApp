@@ -21,7 +21,11 @@ import com.sendbird.android.BaseChannel
 import com.sendbird.android.BaseMessage
 import com.sendbird.android.SendBird
 import java.text.SimpleDateFormat
+import java.time.Instant
+import java.time.format.DateTimeFormatter
 import java.util.*
+
+
 
 
 class ChatActivity : AppCompatActivity() {
@@ -29,11 +33,17 @@ class ChatActivity : AppCompatActivity() {
     private var groupChannel: GroupChannel? = null
     private val TYPE_SENT: Int = 0;
     private val TYPE_RECEIVED: Int = 1;
+    private val TYPE_RECEIVED_UNREAD: Int = 2;
+    private val TYPE_RECEIVED_TODAY: Int = 3;
+    private val TYPE_PRIVATE: Int = 1;
+    private val TYPE_GROUP: Int = 2;
+
     private val CHANNEL_HANDLER_ID = "CHAT_CHANNEL"
     private var channel_url: String = ""
     private var messageList: ArrayList<Message> = ArrayList()
-    private lateinit var messageAdapter: MessageAdapter
-    private lateinit var linearLayoutManager: LinearLayoutManager
+    private var currDate: Date? = null
+    private var messageAdapter: MessageAdapter? = null
+    private var linearLayoutManager: LinearLayoutManager? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -41,12 +51,21 @@ class ChatActivity : AppCompatActivity() {
 
         Thread(Runnable {
             userId = AccessToken.getCurrentAccessToken().userId.toString()
+            currDate =getStartOfDay(Date())
         }).start()
 
         val image_url = intent.getStringExtra("profileUrl")
         val name = intent.getStringExtra("name")
         channel_url = intent.getStringExtra("channelUrl")
-        val lastSeen = intent.getStringExtra("lastSeen")
+        val type = intent.getIntExtra("type", -1)
+
+        if(type == TYPE_PRIVATE) {
+            val lastSeen: String = intent.getStringExtra("lastSeen")
+            if(lastSeen == "Online" || lastSeen == "")
+                action_bar_title_2.text = lastSeen
+            else
+                action_bar_title_2.text = getLastSeen(lastSeen)
+        }
 
         Glide.with(applicationContext)
                 .load(image_url)
@@ -63,7 +82,6 @@ class ChatActivity : AppCompatActivity() {
         rv_chat.adapter = messageAdapter
 
         action_bar_title_1.text = name
-        action_bar_title_2.text = getLastSeen(lastSeen)
 
         GroupChannel.getChannel(channel_url, GroupChannel.GroupChannelGetHandler{
             channel, e ->
@@ -79,18 +97,6 @@ class ChatActivity : AppCompatActivity() {
         btn_send.setOnClickListener {
             sendMessage(et_chat.text.toString())
         }
-
-
-//        Glide.with(applicationContext)
-//                .asBitmap()
-//                .load(image_url)
-//                .apply(RequestOptions().circleCrop().override(120, 120))
-//                .into(object : SimpleTarget<Bitmap>() {
-//                    override fun onResourceReady(bitmap: Bitmap, transition: Transition<in Bitmap>?) {
-//                        supportActionBar!!.setIcon(BitmapDrawable(resources, bitmap))
-//                    }
-//                })
-
     }
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
@@ -130,8 +136,8 @@ class ChatActivity : AppCompatActivity() {
                 sendBirdException.printStackTrace();
                 return@SendUserMessageHandler;
             }
-            messageList.add(Message(userMessage.message, userMessage.createdAt.toString(), TYPE_SENT))
-            messageAdapter.notifyItemInserted(messageList.size -1)
+            messageList.add(Message(userMessage.message, userMessage.createdAt.toString(), TYPE_SENT, groupChannel!!.unreadMessageCount))
+            messageAdapter!!.notifyItemInserted(messageList.size -1)
             et_chat.text.clear()
         })
     }
@@ -145,15 +151,30 @@ class ChatActivity : AppCompatActivity() {
                 return@GetMessagesHandler;
             }
 
+            val unreadMessageCount = groupChannel!!.unreadMessageCount
+            var isTodayCreated = false
+
             list.map { (it as UserMessage) }.forEach {
+                val createdDate = Date((it.createdAt + 28800))
+
+                if(!createdDate.before(currDate) && !isTodayCreated) {
+                    messageList.add(Message("", "", TYPE_RECEIVED_TODAY, -1))
+                    isTodayCreated = true;
+                }
+
                 if(it.sender.userId == userId)
-                    messageList.add(Message(it.message, it.createdAt.toString(), TYPE_SENT))
+                    messageList.add(Message(it.message, it.createdAt.toString(), TYPE_SENT, -1))
                 else
-                    messageList.add(Message(it.message, it.createdAt.toString(), TYPE_RECEIVED))
+                    messageList.add(Message(it.message, it.createdAt.toString(), TYPE_RECEIVED, -1))
             }
 
-            messageAdapter.notifyDataSetChanged()
+            if(unreadMessageCount > 0){
+                messageList.add(messageList.size - unreadMessageCount, Message("", "", TYPE_RECEIVED_UNREAD, unreadMessageCount))
+            }
+
+            messageAdapter!!.notifyDataSetChanged()
             rv_chat.scrollToPosition(messageList.size - 1)
+            groupChannel!!.markAsRead()
         })
     }
 
@@ -162,11 +183,15 @@ class ChatActivity : AppCompatActivity() {
             override fun onMessageReceived(baseChannel: BaseChannel, baseMessage: BaseMessage) {
                 if (baseChannel.url == channel_url) {
                     val userMessage = (baseMessage as UserMessage)
-                    messageList.add(Message(userMessage.message, userMessage.createdAt.toString(), TYPE_RECEIVED))
-                    messageAdapter.notifyItemInserted(messageList.size - 1)
+                    messageList.add(Message(userMessage.message, userMessage.createdAt.toString(), TYPE_RECEIVED, groupChannel!!.unreadMessageCount))
+                    messageAdapter!!.notifyItemInserted(messageList.size - 1)
                     rv_chat.scrollToPosition(messageList.size - 1)
                 }
             }
+
+//            override fun onChannelChanged(channel: BaseChannel?) {
+//
+//            }
         })
     }
 
@@ -178,17 +203,28 @@ class ChatActivity : AppCompatActivity() {
     private fun getLastSeen(s: String): String? {
         return try {
             val newDate = Date(s.toLong())
-            val curr = Calendar.getInstance().time;
             var sdf = SimpleDateFormat("hh:mm a")
+            sdf.timeZone = TimeZone.getTimeZone("GMT+8")
 
-            if(newDate.day == curr.day){
-                "Last seen at "+ sdf.format(newDate)
+            if(!newDate.before(currDate)){
+                "Last seen today "+ sdf.format(newDate)
             } else{
-                sdf = SimpleDateFormat("dd/MM/yyyy HH:mm")
+                sdf.applyPattern("dd/MM/yyyy HH:mm")
                 "Last seen at" + sdf.format(newDate)
             }
         } catch (e: Exception) {
-            e.toString()
+            "Online"
         }
+    }
+
+    private fun getStartOfDay(date: Date): Date {
+        val calendar = Calendar.getInstance()
+        calendar.timeZone = TimeZone.getTimeZone("Asia/Kuala_Lumpur")
+        calendar.time = date
+        calendar.set(Calendar.HOUR_OF_DAY, 0)
+        calendar.set(Calendar.MINUTE, 0)
+        calendar.set(Calendar.SECOND, 0)
+        calendar.set(Calendar.MILLISECOND, 0)
+        return calendar.time
     }
 }

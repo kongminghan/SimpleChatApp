@@ -3,4 +3,5 @@
     <string name="facebook_app_id">939684376241596</string>
     <string name="fb_login_protocol_scheme">fb939684376241596</string>
     <string name="app_id">7B6963E0-3970-4AB5-81FE-3C402F8FBD58</string>
+    <string name="title_activity_group_chat">GroupChatActivity</string>
 </resources>

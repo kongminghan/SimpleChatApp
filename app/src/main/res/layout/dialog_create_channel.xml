@@ -3,20 +3,23 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:padding="16dp"
     android:theme="@style/AppTheme">
 
     <TextView
         android:id="@+id/dialogTitle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Create 1-1 Channel"
-        android:textAppearance="?android:attr/textAppearanceLarge" />
+        android:text="Create channel"
+        android:textAppearance="?android:attr/textAppearanceMedium"
+        android:layout_marginLeft="16dp"
+        android:layout_marginRight="16dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="8dp"
+        android:textColor="@color/black"/>
 
-    <EditText
-        android:id="@+id/userInputDialog"
+    <android.support.v7.widget.RecyclerView
+        android:id="@+id/rv_user"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="Your friend's ID"
-        android:inputType="text" />
+        android:scrollbars="vertical" />
 </LinearLayout>

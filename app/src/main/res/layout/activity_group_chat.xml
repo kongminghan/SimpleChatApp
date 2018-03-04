@@ -13,7 +13,7 @@
         android:id="@+id/appLayout">
 
         <android.support.v7.widget.Toolbar
-            android:id="@+id/toolbar_chat"
+            android:id="@+id/toolbar_group_chat"
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
             android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar"
@@ -32,7 +32,7 @@
     </android.support.design.widget.AppBarLayout>
 
     <android.support.v7.widget.RecyclerView
-        android:id="@+id/rv_chat"
+        android:id="@+id/rv_group_chat"
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:paddingTop="8dp"
@@ -58,7 +58,7 @@
         app:layout_constraintRight_toRightOf="parent"/>
 
     <LinearLayout
-        android:id="@+id/layout_chatbox"
+        android:id="@+id/layout_groupchatbox"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
@@ -72,7 +72,7 @@
         app:layout_constraintLeft_toLeftOf="parent">
 
         <EditText
-            android:id="@+id/et_chat"
+            android:id="@+id/et_group_chat"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_gravity="center"

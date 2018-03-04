@@ -2,7 +2,7 @@
 <resources>
     <color name="colorPrimary">#6051EC</color>
     <color name="colorPrimaryDark">#4C40BC</color>
-    <color name="colorAccent">#FF4081</color>
+    <color name="colorAccent">#997eff</color>
 
     <color name="colorLoginPrimary">#4A466A</color>
     <color name="colorLoginPrimaryDark">#3B3854</color>
@@ -16,4 +16,5 @@
     <color name="black">#000000</color>
     <color name="chatDay">#D4EAF4</color>
     <color name="chatBackground">#F0F0F0</color>
+    <color name="unreadMessageBackground">#F3F3F3</color>
 </resources>

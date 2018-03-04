@@ -23,6 +23,7 @@ import android.content.pm.PackageManager
 import android.content.pm.PackageInfo
 import android.view.ContextThemeWrapper
 import com.facebook.appevents.AppEventsLogger
+import com.google.firebase.iid.FirebaseInstanceId
 import com.sendbird.android.*
 import java.security.MessageDigest
 import java.security.NoSuchAlgorithmException
@@ -40,7 +41,7 @@ class LoginActivity : AppCompatActivity() {
         val accessToken = AccessToken.getCurrentAccessToken()
         if(accessToken != null) {
             val request = GraphRequest.newMeRequest(accessToken) {
-                jsonObject, response ->
+                jsonObject, _ ->
                 val facebookData = getFacebookData(jsonObject)
                 goToNextActivity(facebookData!!)
                 finish()
@@ -60,16 +61,27 @@ class LoginActivity : AppCompatActivity() {
 
                     // make request to get facebook user info
                     val request = GraphRequest.newMeRequest(loginResult.accessToken) {
-                        jsonObject, response ->
+                        jsonObject, _ ->
                         // Getting FB User Data
                         val facebookData = getFacebookData(jsonObject)
 
                         SendBird.init(getString(R.string.app_id), applicationContext)
-                        SendBird.connect(loginResult.accessToken.userId, SendBird.ConnectHandler { user, e ->
+                        SendBird.connect(loginResult.accessToken.userId, SendBird.ConnectHandler { _, e ->
                             if (e != null) {
                                 Toast.makeText(applicationContext, "Failed to connect to SendBird", Toast.LENGTH_SHORT).show()
                                 return@ConnectHandler
                             }
+
+                            if (FirebaseInstanceId.getInstance().token == null) return@ConnectHandler;
+
+                            SendBird.registerPushTokenForCurrentUser(FirebaseInstanceId.getInstance().getToken(),
+                                    SendBird.RegisterPushTokenWithStatusHandler {
+                                        status, e ->
+                                        if (e != null) {
+                                            e.printStackTrace()
+                                            return@RegisterPushTokenWithStatusHandler
+                                        }
+                                    })
 
                             SendBird.updateCurrentUserInfo(facebookData!!["name"].toString(), facebookData["profile_pic"].toString(), SendBird.UserInfoUpdateHandler { e ->
                                 if (e != null) {
