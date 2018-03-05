@@ -72,8 +72,7 @@ class ChatActivity : AppCompatActivity() {
         if(type == TYPE_PRIVATE) {
             if(image_url == ""){
                 GlideApp.with(applicationContext)
-                        .load("")
-                        .placeholder(R.drawable.ic_person)
+                        .load(resources.getDrawable(R.drawable.ic_person))
                         .apply(RequestOptions().circleCrop())
                         .into(conversation_contact_photo)
             }
@@ -81,8 +80,7 @@ class ChatActivity : AppCompatActivity() {
         else {
             if(image_url == ""){
                 GlideApp.with(applicationContext)
-                        .load("")
-                        .placeholder(R.drawable.ic_group)
+                        .load(resources.getDrawable(R.drawable.ic_group))
                         .apply(RequestOptions().circleCrop())
                         .into(conversation_contact_photo)
             }
