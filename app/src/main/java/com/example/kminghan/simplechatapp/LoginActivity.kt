@@ -35,18 +35,13 @@ class LoginActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        SendBird.init(getString(R.string.app_id), applicationContext)
         FacebookSdk.sdkInitialize(applicationContext)
         AppEventsLogger.activateApp(applicationContext)
 
         val accessToken = AccessToken.getCurrentAccessToken()
         if(accessToken != null) {
-            val request = GraphRequest.newMeRequest(accessToken) {
-                jsonObject, _ ->
-                val facebookData = getFacebookData(jsonObject)
-                goToNextActivity(facebookData!!)
-                finish()
-            }
-            request.executeAsync()
+            initializeSendbird(accessToken)
         }
         else
         {
@@ -60,40 +55,48 @@ class LoginActivity : AppCompatActivity() {
                 override fun onSuccess(loginResult: LoginResult) {
 
                     // make request to get facebook user info
-                    val request = GraphRequest.newMeRequest(loginResult.accessToken) {
-                        jsonObject, _ ->
-                        // Getting FB User Data
-                        val facebookData = getFacebookData(jsonObject)
-
-                        SendBird.init(getString(R.string.app_id), applicationContext)
-                        SendBird.connect(loginResult.accessToken.userId, SendBird.ConnectHandler { _, e ->
-                            if (e != null) {
-                                Toast.makeText(applicationContext, "Failed to connect to SendBird", Toast.LENGTH_SHORT).show()
-                                return@ConnectHandler
-                            }
-
-                            if (FirebaseInstanceId.getInstance().token == null) return@ConnectHandler;
-
-                            SendBird.registerPushTokenForCurrentUser(FirebaseInstanceId.getInstance().getToken(),
-                                    SendBird.RegisterPushTokenWithStatusHandler {
-                                        status, e ->
-                                        if (e != null) {
-                                            e.printStackTrace()
-                                            return@RegisterPushTokenWithStatusHandler
-                                        }
-                                    })
-
-                            SendBird.updateCurrentUserInfo(facebookData!!["name"].toString(), facebookData["profile_pic"].toString(), SendBird.UserInfoUpdateHandler { e ->
-                                if (e != null) {
-                                    Toast.makeText(applicationContext, "" + e.code + ":" + e.message, Toast.LENGTH_SHORT).show()
-                                    return@UserInfoUpdateHandler
-                                }
-                                goToNextActivity(facebookData!!);
-                                finish()
-                            })
-                        })
-                    }
-                    request.executeAsync()
+                    initializeSendbird(loginResult.accessToken)
+//                    val request = GraphRequest.newMeRequest(loginResult.accessToken) {
+//                        jsonObject, _ ->
+//
+//                        val progressDialog = ProgressDialog(this@LoginActivity)
+//                        progressDialog.setMessage("Loading...")
+//                        progressDialog.setCancelable(false)
+//                        progressDialog.show()
+//
+//                        // Getting FB User Data
+//                        val facebookData = getFacebookData(jsonObject)
+//
+//                        SendBird.init(getString(R.string.app_id), applicationContext)
+//                        SendBird.connect(loginResult.accessToken.userId, SendBird.ConnectHandler { _, e ->
+//                            if (e != null) {
+//                                Toast.makeText(applicationContext, "Failed to connect to SendBird", Toast.LENGTH_SHORT).show()
+//                                return@ConnectHandler
+//                            }
+//
+//                            if (FirebaseInstanceId.getInstance().token == null) return@ConnectHandler;
+//
+//                            SendBird.registerPushTokenForCurrentUser(FirebaseInstanceId.getInstance().getToken(),
+//                                    SendBird.RegisterPushTokenWithStatusHandler {
+//                                        status, e ->
+//                                        if (e != null) {
+//                                            e.printStackTrace()
+//                                            return@RegisterPushTokenWithStatusHandler
+//                                        }
+//                                    })
+//
+//                            SendBird.updateCurrentUserInfo(facebookData!!["name"].toString(), facebookData["profile_pic"].toString(), SendBird.UserInfoUpdateHandler { e ->
+//                                if (e != null) {
+//                                    Toast.makeText(applicationContext, "" + e.code + ":" + e.message, Toast.LENGTH_SHORT).show()
+//                                    return@UserInfoUpdateHandler
+//                                }
+//                                progressDialog.dismiss()
+//                                goToNextActivity(facebookData!!);
+//                                finish()
+//                            })
+//                        })
+//                    }
+//                    request.executeAsync()
                 }
                 override fun onCancel() {}
 
@@ -107,6 +110,49 @@ class LoginActivity : AppCompatActivity() {
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent) {
         callbackManager!!.onActivityResult(requestCode, resultCode, data)
         super.onActivityResult(requestCode, resultCode, data)
+    }
+
+    private fun initializeSendbird(accessToken: AccessToken){
+        val request = GraphRequest.newMeRequest(accessToken) {
+            jsonObject, _ ->
+
+            val progressDialog = ProgressDialog(this@LoginActivity)
+            progressDialog.setMessage("Loading...")
+            progressDialog.setCancelable(false)
+            progressDialog.show()
+
+            // Getting FB User Data
+            val facebookData = getFacebookData(jsonObject)
+
+            SendBird.connect(accessToken.userId, SendBird.ConnectHandler { _, e ->
+                if (e != null) {
+                    Toast.makeText(applicationContext, "Failed to connect to SendBird", Toast.LENGTH_SHORT).show()
+                    return@ConnectHandler
+                }
+
+                if (FirebaseInstanceId.getInstance().token == null) return@ConnectHandler;
+
+                SendBird.registerPushTokenForCurrentUser(FirebaseInstanceId.getInstance().getToken(),
+                        SendBird.RegisterPushTokenWithStatusHandler {
+                            status, e ->
+                            if (e != null) {
+                                e.printStackTrace()
+                                return@RegisterPushTokenWithStatusHandler
+                            }
+                        })
+
+                SendBird.updateCurrentUserInfo(facebookData!!["name"].toString(), facebookData["profile_pic"].toString(), SendBird.UserInfoUpdateHandler { e ->
+                    if (e != null) {
+                        Toast.makeText(applicationContext, "" + e.code + ":" + e.message, Toast.LENGTH_SHORT).show()
+                        return@UserInfoUpdateHandler
+                    }
+                    progressDialog.dismiss()
+                    goToNextActivity(facebookData!!);
+                    finish()
+                })
+            })
+        }
+        request.executeAsync()
     }
 
     private fun goToNextActivity(facebookData: Bundle) {

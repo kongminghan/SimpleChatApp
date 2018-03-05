@@ -61,18 +61,34 @@ class ChatActivity : AppCompatActivity() {
         val name = intent.getStringExtra("name")
         channel_url = intent.getStringExtra("channelUrl")
         type = intent.getIntExtra("type", -1)
+        val lastSeen: String = intent.getStringExtra("lastSeen")
+
+        when (lastSeen) {
+            "Online" -> action_bar_title_2.text = lastSeen
+            "" -> action_bar_title_2.visibility = View.GONE
+            else -> action_bar_title_2.text = getLastSeen(lastSeen)
+        }
 
         if(type == TYPE_PRIVATE) {
-            val lastSeen: String = intent.getStringExtra("lastSeen")
-
-            when (lastSeen) {
-                "Online" -> action_bar_title_2.text = lastSeen
-                "" -> action_bar_title_2.visibility = View.GONE
-                else -> action_bar_title_2.text = getLastSeen(lastSeen)
+            if(image_url == ""){
+                GlideApp.with(applicationContext)
+                        .load("")
+                        .placeholder(R.drawable.ic_person)
+                        .apply(RequestOptions().circleCrop())
+                        .into(conversation_contact_photo)
+            }
+        }
+        else {
+            if(image_url == ""){
+                GlideApp.with(applicationContext)
+                        .load("")
+                        .placeholder(R.drawable.ic_group)
+                        .apply(RequestOptions().circleCrop())
+                        .into(conversation_contact_photo)
             }
         }
 
-        Glide.with(applicationContext)
+        GlideApp.with(applicationContext)
                 .load(image_url)
                 .apply(RequestOptions().circleCrop())
                 .into(conversation_contact_photo)

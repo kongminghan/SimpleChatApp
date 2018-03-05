@@ -34,13 +34,13 @@ class ChannelAdapter(val chats: ArrayList<Channel>): RecyclerView.Adapter<Channe
 
         fun bindChannel(chat: Channel) {
             if(chat.img_url != "")
-                GlideApp.with(view.context).load(chat.img_url).apply(RequestOptions().circleCrop()).into(view.img)
+                GlideApp.with(view.context).load(chat.img_url).placeholder(R.drawable.ic_person).apply(RequestOptions().circleCrop()).into(view.img)
             else {
                 if(chat.type == TYPE_PRIVATE) {
-                    GlideApp.with(view.context).load(R.drawable.ic_person).apply(RequestOptions().circleCrop()).into(view.img)
+                    GlideApp.with(view.context).load("").placeholder(R.drawable.ic_person).apply(RequestOptions().circleCrop()).into(view.img)
                 }
                 else if(chat.type == TYPE_GROUP) {
-                    GlideApp.with(view.context).load(R.drawable.ic_group).apply(RequestOptions().circleCrop()).into(view.img)
+                    GlideApp.with(view.context).load("").placeholder(R.drawable.ic_group).apply(RequestOptions().circleCrop()).into(view.img)
                 }
             }
 

@@ -28,7 +28,7 @@ class MyFirebaseInstanceIDService : FirebaseInstanceIdService() {
             }
 
             if (pushTokenRegistrationStatus == SendBird.PushTokenRegistrationStatus.PENDING) {
-                Toast.makeText(this@MyFirebaseInstanceIDService, "Connection required to register push token.", Toast.LENGTH_SHORT).show()
+                sendRegistrationToServer(token)
             }
         })
     }

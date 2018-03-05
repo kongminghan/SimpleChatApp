@@ -113,12 +113,15 @@ class ListActivity : AppCompatActivity() {
                 .setPositiveButton("Create", {
                     _, _ ->
                     if(userAdapter!!.getSelectedIdCount() > 0) {
-                        val channelType = if(userAdapter!!.getSelectedIdCount() == 2)
+                        val channelType = if(userAdapter!!.getSelectedIdCount() == 1)
                             "private"
                         else
                             "Group Channel"
 
-                        GroupChannel.createChannelWithUserIds(userAdapter!!.getSelectedIds(), true, channelType, null, null, GroupChannel.GroupChannelCreateHandler { groupChannel, e ->
+                        val IDs = userAdapter!!.getSelectedIds()
+                        IDs.add(userId)
+
+                        GroupChannel.createChannelWithUserIds(IDs, true, channelType, null, null, GroupChannel.GroupChannelCreateHandler { groupChannel, e ->
                             if (e != null) {
                                 e.printStackTrace()
                                 return@GroupChannelCreateHandler
@@ -130,26 +133,42 @@ class ListActivity : AppCompatActivity() {
                             val filteredList: Channel? = chatList.find { it.channelUrl == groupChannel.url }
 
                             if(filteredList == null) {
-                                for(c in chatList){
-                                    if(c.channelUrl != groupChannel.url){
-                                        val members = groupChannel.members
+                                if(chatList.size > 0){
+                                    for(c in chatList){
+                                        if(c.channelUrl != groupChannel.url){
+                                            val members = groupChannel.members
 
-                                        if(groupChannel.memberCount > 2) {
-                                            chn = Channel(groupChannel.name, "", groupChannel.coverUrl, groupChannel.url,"", TYPE_GROUP)
-                                            isAdded = true
-                                        }else {
-                                            for(member in members){
-                                                if(member.userId != userId)
-                                                    chn = Channel(member.nickname, "", member.profileUrl, groupChannel.url,"", TYPE_PRIVATE)
-                                                isAdded = true
+                                            if(groupChannel.memberCount > 2) {
+                                                chn = Channel(groupChannel.name, "", groupChannel.coverUrl, groupChannel.url,"", TYPE_GROUP)
+                                                chatList.add(chn)
+                                                adapter!!.notifyDataSetChanged()
+                                            }else {
+                                                for(member in members){
+                                                    if(member.userId != userId) {
+                                                        chn = Channel(member.nickname, "", member.profileUrl, groupChannel.url, "", TYPE_PRIVATE)
+                                                        chatList.add(chn)
+                                                        adapter!!.notifyDataSetChanged() }
+                                                }
                                             }
+                                            checkEmptyState()
+                                            break
                                         }
-                                        break
                                     }
+                                }else {
+                                    if(groupChannel.memberCount > 2) {
+                                        chn = Channel(groupChannel.name, "", groupChannel.coverUrl, groupChannel.url,"", TYPE_GROUP)
+                                        chatList.add(chn)
+                                        adapter!!.notifyDataSetChanged()
+                                    }else {
+                                        for(member in groupChannel.members){
+                                            if(member.userId != userId) {
+                                                chn = Channel(member.nickname, "", member.profileUrl, groupChannel.url, "", TYPE_PRIVATE)
+                                                chatList.add(chn)
+                                                adapter!!.notifyDataSetChanged() }
+                                        }
+                                    }
+                                    checkEmptyState()
                                 }
-                                chatList.add(chn!!)
-                                checkEmptyState()
-                                adapter!!.notifyDataSetChanged()
                             }
                             else
                                 Toast.makeText(this@ListActivity, "Duplicate channel is found!", Toast.LENGTH_SHORT).show()

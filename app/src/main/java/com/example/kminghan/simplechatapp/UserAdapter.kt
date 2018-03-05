@@ -43,9 +43,9 @@ class UserAdapter (private val users: ArrayList<User>): RecyclerView.Adapter<Use
 
         fun bindChannel(user: User) {
             if(user.profileUrl != "")
-                GlideApp.with(view.context).load(user.profileUrl).apply(RequestOptions().circleCrop()).into(view.ivUser)
+                GlideApp.with(view.context).load(user.profileUrl).placeholder(R.drawable.ic_person).apply(RequestOptions().circleCrop()).into(view.ivUser)
             else
-                GlideApp.with(view.context).load(R.drawable.ic_person).apply(RequestOptions().circleCrop()).into(view.ivUser)
+                GlideApp.with(view.context).load("").placeholder(R.drawable.ic_person).apply(RequestOptions().circleCrop()).into(view.ivUser)
 
             view.chkUser.text = user.nickname
 
